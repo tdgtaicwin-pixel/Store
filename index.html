@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Stock Mobile</title>
+    <style>
+        body { font-family: sans-serif; padding: 10px; background-color: #f0f2f5; margin: 0; }
+        h2 { text-align: center; font-size: 1.2rem; color: #333; margin: 10px 0; }
+        table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; margin-bottom: 20px; }
+        th, td { padding: 10px 5px; border-bottom: 1px solid #eee; text-align: center; font-size: 0.9rem; }
+        th { background-color: #4a90e2; color: white; }
+        .product-name { text-align: left; font-weight: bold; width: 50%; }
+        .qty-control { display: flex; align-items: center; justify-content: space-between; gap: 5px; }
+        button { padding: 8px 10px; border: none; background: #e0e0e0; border-radius: 5px; cursor: pointer; }
+        .plus { background: #4CAF50; color: white; }
+        .minus { background: #f44336; color: white; }
+        
+        #summaryBox { background: #fff; padding: 15px; border-radius: 8px; border: 2px dashed #4a90e2; margin-bottom: 20px; white-space: pre-wrap; font-family: monospace; color: #333; }
+        #copyBtn { width: 100%; padding: 15px; background: #00B900; color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <h2>คลังสินค้า</h2>
+    
+    <table>
+        <thead><tr><th>รายการ</th><th>จำนวน</th></tr></thead>
+        <tbody id="stockBody"></tbody>
+    </table>
+
+    <h3>ตรวจสอบสรุปยอด:</h3>
+    <div id="summaryBox">กำลังโหลดสรุป...</div>
+    
+    <button id="copyBtn" onclick="copyText()">คัดลอกข้อความสรุปส่งไลน์</button>
+
+    <textarea id="tempText" style="position:absolute; left:-9999px;"></textarea>
+
+    <script>
+        const productNames = ["ก้ามปูยัก", "ไก่ยอใหญ่สไลด์พริก", "เต้าหู้ปลาลูกเต๋า", "ปูอัดจัมโบ้", "ลูกชิ้นเอ็นไก่", "ลูกชิ้นเอ็นเนื้อ", "ไส้กรอกไก่ชีทเต็มคำ", "ไส้กรอกไก่ย่างลุยไฟ", "ไส้กรอกจัมโบ้รมควัน", "ไส้กรอกจัมโบ้หนังกรอบ", "ไส้กรอกเวียนนาอีสาน", "ลูกชิ้นปลา", "ไก่แซ่บ", "ไก่ยอ", "ไก่สดเสียบไม้", "น้ำจิ้ม", "น้ำยำ", "น้ำจิ้มซีฟู๊ด"];
+        const liquidItems = ["น้ำจิ้ม", "น้ำยำ", "น้ำจิ้มซีฟู๊ด"];
+        const stockData = productNames.map(name => ({ name, qty: 1 }));
+
+        function getThaiDate() {
+            const now = new Date();
+            return `${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear() + 543}`;
+        }
+
+        function render() {
+            const tbody = document.getElementById('stockBody');
+            stockData.forEach((item, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td class="product-name">${item.name}</td><td class="qty-control"><button class="minus" onclick="updateQty(${index}, -1)">-</button><span id="qty-${index}">${item.qty}</span><button class="plus" onclick="updateQty(${index}, 1)">+</button></td>`;
+                tbody.appendChild(row);
+            });
+            updateSummary();
+        }
+
+        function updateQty(index, direction) {
+            let item = stockData[index];
+            let isLiquid = liquidItems.includes(item.name);
+            if (direction > 0) {
+                if (isLiquid && item.qty < 1) item.qty += 0.25; else item.qty += 1;
+            } else {
+                if (isLiquid && item.qty <= 1 && item.qty > 0) item.qty = Math.max(0, item.qty - 0.25);
+                else if (item.qty > 0) item.qty -= 1;
+            }
+            item.qty = Math.round(item.qty * 100) / 100;
+            document.getElementById(`qty-${index}`).innerText = item.qty;
+            updateSummary();
+        }
+
+        function updateSummary() {
+            let report = "📦 สรุปยอดสต๊อกคงเหลือ ประจำวันที่ " + getThaiDate() + ":\n";
+            stockData.forEach(item => {
+                let unit = liquidItems.includes(item.name) ? "ถัง" : "แพ็ค";
+                report += (item.qty > 0 ? "✅ " : "❌ ") + item.name + ": " + item.qty + " " + unit + "\n";
+            });
+            document.getElementById('summaryBox').innerText = report;
+        }
+
+        function copyText() {
+            const copyArea = document.getElementById('tempText');
+            copyArea.value = document.getElementById('summaryBox').innerText;
+            copyArea.select();
+            document.execCommand('copy');
+            alert("คัดลอกข้อความสรุปแล้ว นำไปวางในไลน์ได้เลยครับ!");
+        }
+
+        render();
+    </script>
+</body>
+</html>
